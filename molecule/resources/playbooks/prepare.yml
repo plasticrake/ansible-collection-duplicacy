@@ -8,7 +8,10 @@
         update_cache: yes
       when: ansible_os_family == 'Debian'
 
-    - name: Install bash
+    - name: "Install bash, curl, jq"
       package:
-        name: bash
+        name:
+          - bash
+          - curl
+          - jq
         state: present

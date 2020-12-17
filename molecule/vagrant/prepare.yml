@@ -1,5 +1,5 @@
 ---
-- name: Prepare
+- name: Prepare (Python)
   hosts: all
   gather_facts: false # gather_facts does not work until python is installed
   tasks:
@@ -21,9 +21,12 @@
   hosts: all
   gather_facts: true
   tasks:
-    - name: Install bash
+    - name: "Install bash, curl, jq"
       package:
-        name: bash
+        name:
+          - bash
+          - curl
+          - jq
         state: present
       become: true
 

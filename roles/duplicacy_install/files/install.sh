@@ -3,9 +3,18 @@
 INSTALL_TYPE=$1
 INSTALL_FULLPATH="${2:-/usr/local/bin/${1}}"
 INSTALL_TAG="${3:-latest}"
+DL_PROGRAM="${4:-default}"
 
 OS=`uname -s`
 ARCH=`uname -m`
+
+if [ $DL_PROGRAM = "default" ]; then
+  if hash curl 2>/dev/null; then
+    DL_PROGRAM=curl
+  else 
+    DL_PROGRAM=wget
+  fi
+fi
 
 case "$OS" in
   'FreeBSD')
@@ -61,7 +70,7 @@ function get_release_url() {
 }
 
 function download_stdout() {
-  if hash curl 2>/dev/null; then
+  if [ $DL_PROGRAM = "curl" ]; then
     curl --silent "$@"
   else
     wget --quiet -O - "$@"
@@ -71,7 +80,7 @@ function download_stdout() {
 function download_and_install() {
   local url=$1
   local dest=$2
-  if hash curl 2>/dev/null; then
+  if [ $DL_PROGRAM = "curl" ]; then
     echo "curl -silent --location $url --output $dest"
     curl --silent --location $url --output $dest
   else

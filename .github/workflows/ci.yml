@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ansible_collections/plasticrake/duplicacy
+    steps:
+      - name: Checkout into collections structure
+        uses: actions/checkout@v2
+        with:
+          path: ansible_collections/plasticrake/duplicacy
+
+      - name: Set up Python 3
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip3 cache dir)"
+
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-${{ github.workflow }}-${{ github.job }}-pip
+
+      - name: Install test dependencies
+        run: pip3 install yamllint ansible-lint
+
+      - name: Lint code
+        run: |
+          yamllint .
+          ansible-lint
+
+  molecule:
+    name: Molecule
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        distro:
+          - diodonfrost/ansible-archlinux:latest
+          - geerlingguy/docker-centos8-ansible:latest
+          - geerlingguy/docker-debian10-ansible:latest
+          - geerlingguy/docker-fedora33-ansible:latest
+          - diodonfrost/ansible-opensuse:leap
+          - geerlingguy/docker-ubuntu2004-ansible:latest
+          - freebsd
+          - macos
+        role_name:
+          - duplicacy_install
+        exclude:
+          - os: ubuntu-latest
+            distro: freebsd
+          - os: ubuntu-latest
+            distro: macos
+          - os: macos-latest
+            distro: diodonfrost/ansible-archlinux:latest
+          - os: macos-latest
+            distro: geerlingguy/docker-centos8-ansible:late
+          - os: macos-latest
+            distro: geerlingguy/docker-centos8-ansible:latest
+          - os: macos-latest
+            distro: geerlingguy/docker-debian10-ansible:latest
+          - os: macos-latest
+            distro: geerlingguy/docker-fedora33-ansible:latest
+          - os: macos-latest
+            distro: diodonfrost/ansible-opensuse:leap
+          - os: macos-latest
+            distro: geerlingguy/docker-ubuntu2004-ansible:latest
+
+    defaults:
+      run:
+        working-directory: ansible_collections/plasticrake/duplicacy
+    steps:
+      - name: Checkout into collections structure
+        uses: actions/checkout@v2
+        with:
+          path: ansible_collections/plasticrake/duplicacy
+
+      - name: Set up Python 3
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip3 cache dir)"
+
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-${{ github.workflow }}-${{ github.job }}-pip
+
+      - name: Set molecule scenario (linux)
+        if: matrix.distro != 'macos' && matrix.distro != 'freebsd'
+        run: echo "SCENARIO=default" >> $GITHUB_ENV
+
+      - name: Set molecule scenario (freebsd)
+        if: matrix.distro == 'freebsd'
+        run: echo "SCENARIO=vagrant" >> $GITHUB_ENV
+
+      - name: Set molecule scenario (macos)
+        if: matrix.distro == 'macos'
+        run: echo "SCENARIO=delegated-local" >> $GITHUB_ENV
+
+      - name: Install test dependencies
+        run: pip3 install ansible molecule[docker] docker python-vagrant molecule_vagrant
+
+      - name: Run Molecule tests
+        run: molecule test --scenario-name $SCENARIO
+        env:
+          PY_COLORS: "1"
+          ANSIBLE_FORCE_COLOR: "1"
+          MOLECULE_DISTRO: ${{ matrix.distro }}
+          ROLE_NAME: ${{ matrix.role_name }}

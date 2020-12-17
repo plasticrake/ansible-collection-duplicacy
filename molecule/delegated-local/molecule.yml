@@ -13,7 +13,7 @@ provisioner:
   name: ansible
   playbooks:
     prepare: ../resources/playbooks/prepare.yml
-    converge: ../resources/playbooks/converge.yml
-    verify: ../resources/playbooks/verify.yml
+    converge: ../roles/${ROLE_NAME}/playbooks/converge.yml
+    verify: ../roles/${ROLE_NAME}/playbooks/verify.yml
 verifier:
   name: ansible

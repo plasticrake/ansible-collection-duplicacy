@@ -5,8 +5,8 @@ An Ansible Role that installs [Duplicacy CLI](https://github.com/gilbertchen/dup
 ## Requirements
 
 - `bash`
-- `wget` or `curl` - if neither are found, `wget` will be installed.
-- `jq` - if not found will be installed.
+- `curl` or `wget`
+- `jq`
 
 ## Role Variables
 
@@ -47,22 +47,6 @@ Duplicacy install path.
     duplicacy_util_path: "{{ install_path }}/duplicacy-util"
 
 duplicacy-util install path.
-
-    install_jq: true
-
-Install `jq` from package manager. `jq` is required to run the duplicacy download script.
-
-    install_jq_package_state: present
-
-The state of the jq package install. If you want to always update to the latest version, change this to `latest`.
-
-    install_jq_macos_url: https://github.com/stedolan/jq/releases/download/jq-1.6/jq-osx-amd64
-
-On macOS systems, if [brew](https://brew.sh/) is not installed, download from this url.
-
-    jq_path: "{{ install_path }}/jq"
-
-Install path for `jq` if downloaded from `install_jq_macos_url`.
 
 ## Dependencies
 

@@ -1,0 +1,14 @@
+---
+install_duplicacy: true
+install_duplicacy_force: false
+install_duplicacy_version: latest
+install_duplicacy_util: true
+install_duplicacy_util_force: false
+install_duplicacy_util_version: latest
+install_path: /usr/local/bin
+duplicacy_path: "{{ install_path }}/duplicacy"
+duplicacy_util_path: "{{ install_path }}/duplicacy-util"
+install_jq: true
+install_jq_package_state: present
+install_jq_macos_url: https://github.com/stedolan/jq/releases/download/jq-1.6/jq-osx-amd64
+jq_path: "{{ install_path }}/jq"

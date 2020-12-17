@@ -1,0 +1,111 @@
+---
+- name: Check if curl is installed
+  shell: command -v curl
+  environment:
+    PATH: "{{ ansible_env.PATH }}:{{ install_path }}"
+  register: cmd_check_curl
+  changed_when: false
+  failed_when: cmd_check_curl.rc not in [0, 1, 127] or cmd_check_curl.stderr
+  tags:
+    - skip_ansible_lint # avoid lint error [E305] Use shell only when shell functionality is required
+
+- name: Set curl_installed
+  set_fact:
+    curl_installed: "{{ cmd_check_curl.rc == 0 }}"
+
+- name: "Install dependency: wget (Linux/FreeBSD)"
+  package:
+    name: wget
+    state: present
+  when:
+    - not curl_installed
+    - ansible_system == 'Linux' or ansible_system == 'FreeBSD'
+
+- name: Check if jq is installed
+  shell: command -v jq
+  environment:
+    PATH: "{{ ansible_env.PATH }}:{{ install_path }}"
+  register: cmd_jq
+  changed_when: false
+  failed_when: cmd_jq.rc not in [0, 1, 127] or cmd_jq.stderr
+  when: install_jq
+  tags:
+    - skip_ansible_lint # avoid lint error [E305] Use shell only when shell functionality is required
+
+- name: Set jq_installed
+  set_fact:
+    jq_installed: "{{ cmd_jq.rc == 0 }}"
+
+- name: "Install dependency: jq (Linux/FreeBSD)"
+  package:
+    name: jq
+    state: "{{ install_jq_package_state }}"
+  when:
+    - install_jq
+    - not jq_installed
+    - ansible_system == 'Linux' or ansible_system == 'FreeBSD'
+
+- name: macOS
+  when:
+    - install_jq
+    - not jq_installed
+    - ansible_system == 'Darwin'
+  block:
+    - name: Check if brew is installed
+      shell: command -v brew >/dev/null 2>&1
+      register: cmd_brew
+      failed_when: cmd_brew.rc not in [0, 1, 127] or cmd_brew.stderr
+
+    - name: Set brew_installed
+      set_fact:
+        brew_installed: "{{ cmd_brew.rc == 0 }}"
+
+    - name: "Install dependency: jq (macOS via brew)"
+      homebrew:
+        name: jq
+        state: "{{ install_jq_package_state }}"
+        update_homebrew: true
+      when:
+        - brew_installed
+
+    - name: "Install dependency: jq (macOS via get_url)"
+      get_url:
+        url: "{{ install_jq_macos_url }}"
+        dest: "{{ jq_path }}"
+        mode: u=rwx,g=rx,o=rx
+      when:
+        - not brew_installed
+
+- name: "Install duplicacy"
+  script: "install.sh duplicacy {{ duplicacy_path }} {{ install_duplicacy_version }}"
+  args:
+    creates: "{{ omit if install_duplicacy_force else duplicacy_path }}"
+  environment:
+    PATH: "{{ ansible_env.PATH }}:{{ install_path }}"
+  when: install_duplicacy
+
+- name: "Output duplicacy install path"
+  debug:
+    msg: "duplicacy{{ ' (forced)' if install_duplicacy_force else ''}} installed here: {{ duplicacy_path }}"
+  when: install_duplicacy
+
+- name: "Install duplicacy-util"
+  script: "install.sh duplicacy-util {{ duplicacy_util_path }} {{ install_duplicacy_util_version }}"
+  args:
+    creates: "{{ omit if install_duplicacy_util_force else duplicacy_util_path }}"
+  environment:
+    PATH: "{{ ansible_env.PATH }}:{{ install_path }}"
+  when: install_duplicacy_util
+
+- name: "Output duplicacy-util install path"
+  debug:
+    msg: "duplicacy-util{{ ' (forced)' if install_duplicacy_util_force else ''}} installed here: {{ duplicacy_util_path }}"
+  when: install_duplicacy_util
+
+- name: Set duplicacy install facts
+  set_fact:
+    cacheable: yes
+    install_path: "{{ install_path }}"
+    duplicacy_path: "{{ duplicacy_path }}"
+    duplicacy_util_path: "{{ duplicacy_util_path }}"
+    jq_path: "{{ jq_path }}"

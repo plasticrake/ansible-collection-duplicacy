@@ -1,0 +1,42 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+platforms:
+  - name: macos-instance
+    box: monsenso/macos-10.13
+    memory: 8192
+    cpus: 2
+    provider_raw_config_args:
+      - 'customize ["modifyvm", :id, "--usb", "off"]'
+      - 'customize ["modifyvm", :id, "--usbehci", "off"]'
+
+  # - name: freebsd11-instance
+  #   box: freebsd/FreeBSD-12.2-STABLE
+  #   memory: 512
+  #   cpus: 1
+  #   config_options:
+  #     "vm.guest": '"freebsd"'
+  #     "ssh.shell": '"/bin/sh"'
+  #   provider_raw_config_args:
+  #     - 'customize ["modifyvm", :id, "--usb", "off"]'
+  #     - 'customize ["modifyvm", :id, "--usbehci", "off"]'
+  #   groups:
+  #     - freebsd
+
+provisioner:
+  name: ansible
+  playbooks:
+    converge: ../resources/playbooks/converge.yml
+    verify: ../resources/playbooks/verify.yml
+  inventory:
+    group_vars:
+      freebsd:
+        ansible_python_interpreter: /usr/local/bin/python
+scenario:
+  name: vagrant
+verifier:
+  name: ansible

@@ -1,0 +1,13 @@
+---
+# This is an example playbook to execute Ansible tests.
+
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Executables are in path
+      include_tasks: ../../../resources/verify/executable-in-path.yml
+      loop:
+        - duplicacy
+        - "duplicacy-util"
+        - jq

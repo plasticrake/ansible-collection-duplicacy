@@ -1,0 +1,51 @@
+---
+galaxy_info:
+  role_name: duplicacy_install
+  author: plasticrake
+  description: Installs Duplicacy CLI and/or duplicacy-util
+  license: MIT
+  min_ansible_version: 2.6
+  platforms:
+    - name: GenericBSD
+      versions:
+        - all
+    - name: GenericLinux
+      versions:
+        - all
+    - name: GenericUNIX
+      versions:
+        - all
+    - name: Alpine
+      versions:
+        - all
+    - name: ArchLinux
+      version:
+        - all
+    - name: Debian
+      versions:
+        - all
+    - name: EL
+      version:
+        - all
+    - name: Fedora
+      versions:
+        - all
+    - name: FreeBSD
+      versions:
+        - all
+    - name: MacOSX
+      versions:
+        - all
+    - name: OpenSUSE
+      versions:
+        - all
+    - name: SLES
+      verions:
+        - all
+    - name: Ubuntu
+      versions:
+        - all
+  galaxy_tags:
+    - backup
+    - duplicacy
+    - system

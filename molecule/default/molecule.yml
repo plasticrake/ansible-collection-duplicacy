@@ -1,0 +1,18 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: instance
+    image: "${MOLECULE_DISTRO:-geerlingguy/docker-centos8-ansible:latest}"
+    pre_build_image: true
+provisioner:
+  name: ansible
+  log: true
+  playbooks:
+    prepare: ../resources/playbooks/prepare.yml
+    converge: ../roles/${ROLE_NAME}/playbooks/converge.yml
+    verify: ../roles/${ROLE_NAME}/playbooks/verify.yml
+verifier:
+  name: ansible

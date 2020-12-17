@@ -1,0 +1,11 @@
+- name: Executable in path
+  block:
+    - name: Check if '{{ item }}' is in path
+      shell: command -v {{ item }}
+      environment:
+        PATH: "{{ ansible_env.PATH }}:{{ install_path }}"
+      register: cmd
+      changed_when: false
+      failed_when: cmd.rc not in [0, 1, 127] or cmd.stderr
+      tags:
+        - skip_ansible_lint # avoid lint error [E305] Use shell only when shell functionality is required

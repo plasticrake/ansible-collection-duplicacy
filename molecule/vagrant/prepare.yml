@@ -1,0 +1,35 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: false # gather_facts does not work until python is installed
+  tasks:
+    - name: Check if python is installed
+      shell: command -v python
+      register: cmd_check_python
+      changed_when: false
+      failed_when: cmd_check_python.rc not in [0, 1, 127]
+      tags:
+        - skip_ansible_lint # avoid lint error [E305] Use shell only when shell functionality is required
+
+    - name: Install python for Ansible
+      raw: pkg update && pkg install -y python
+      become: true
+      changed_when: false
+      when: cmd_check_python.rc != 0
+
+- name: Prepare
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Install bash
+      package:
+        name: bash
+        state: present
+      become: true
+
+    - name: Install ca_root_nss
+      package:
+        name: ca_root_nss
+        state: present
+      become: true
+      when: ansible_system == 'FreeBSD'

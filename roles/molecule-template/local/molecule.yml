@@ -8,12 +8,11 @@ driver:
     ansible_connection_options:
       ansible_connection: local
 platforms:
-  - name: instance
+  - name: local
 provisioner:
   name: ansible
   playbooks:
-    prepare: ../resources/playbooks/prepare.yml
-    converge: ../roles/${ROLE_NAME}/playbooks/converge.yml
-    verify: ../roles/${ROLE_NAME}/playbooks/verify.yml
+    prepare: ../../../resources/prepare.yml
+    converge: ../../../resources/converge.yml
 verifier:
   name: ansible

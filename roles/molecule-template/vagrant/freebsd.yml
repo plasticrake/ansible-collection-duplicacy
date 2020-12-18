@@ -1,0 +1,14 @@
+---
+platforms:
+  - name: freebsd11-instance
+    box: freebsd/FreeBSD-12.2-STABLE
+    memory: 512
+    cpus: 1
+    config_options:
+      "vm.guest": '"freebsd"'
+      "ssh.shell": '"/bin/sh"'
+    provider_raw_config_args:
+      - 'customize ["modifyvm", :id, "--usb", "off"]'
+      - 'customize ["modifyvm", :id, "--usbehci", "off"]'
+    groups:
+      - freebsd

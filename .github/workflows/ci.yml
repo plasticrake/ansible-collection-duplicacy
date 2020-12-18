@@ -33,10 +33,10 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ steps.pip-cache.outputs.dir }}
-          key: ${{ runner.os }}-${{ github.workflow }}-${{ github.job }}-pip
+          key: ${{ runner.os }}-pip
 
       - name: Install test dependencies
-        run: pip3 install yamllint ansible-lint
+        run: pip install yamllint ansible-lint
 
       - name: Lint code
         run: |
@@ -68,8 +68,6 @@ jobs:
             distro: macos
           - os: macos-latest
             distro: diodonfrost/ansible-archlinux:latest
-          - os: macos-latest
-            distro: geerlingguy/docker-centos8-ansible:late
           - os: macos-latest
             distro: geerlingguy/docker-centos8-ansible:latest
           - os: macos-latest
@@ -104,7 +102,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ steps.pip-cache.outputs.dir }}
-          key: ${{ runner.os }}-${{ github.workflow }}-${{ github.job }}-pip
+          key: ${{ runner.os }}-pip
+
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: "~/.vagrant.d/boxes"
+          key: ${{ runner.os }}-vagrant
 
       - name: Set molecule scenario (linux)
         if: matrix.distro != 'macos' && matrix.distro != 'freebsd'
@@ -116,13 +120,40 @@ jobs:
 
       - name: Set molecule scenario (macos)
         if: matrix.distro == 'macos'
-        run: echo "SCENARIO=delegated-local" >> $GITHUB_ENV
+        run: echo "SCENARIO=local" >> $GITHUB_ENV
 
-      - name: Install test dependencies
-        run: pip3 install ansible molecule[docker] docker python-vagrant molecule_vagrant
+      - name: Install test dependencies (docker)
+        if: env.SCENARIO != 'vagrant'
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install "rich<9.5.0" "molecule[ansible,docker,lint]"
+
+      - name: Install test dependencies (vagrant)
+        if: env.SCENARIO == 'vagrant'
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install "rich<9.5.0" "molecule[ansible,lint]" molecule-vagrant python-vagrant
+
+      - name: Run Molecule version
+        run: molecule --version
+
+      - name: Install yq (ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo snap install yq
+
+      - name: Install yq (macos)
+        if: matrix.os == 'macos-latest'
+        run: brew install yq
+
+      - name: Generate Molecule role tests
+        run: ./test_role.sh $ROLE_NAME $MOLECULE_DISTRO
+        env:
+          MOLECULE_DISTRO: ${{ matrix.distro }}
+          ROLE_NAME: ${{ matrix.role_name }}
 
       - name: Run Molecule tests
-        run: molecule test --scenario-name $SCENARIO
+        run: molecule --debug test --scenario-name $SCENARIO
+        working-directory: ansible_collections/plasticrake/duplicacy/roles/${{ matrix.role_name }}
         env:
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"

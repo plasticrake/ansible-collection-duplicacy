@@ -1,0 +1,5 @@
+---
+- name: Converge
+  hosts: all
+  roles:
+    - role: "plasticrake.duplicacy.{{ lookup('env', 'ROLE_NAME') }}"

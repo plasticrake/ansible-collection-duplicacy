@@ -1,0 +1,23 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+platforms:
+provisioner:
+  name: ansible
+  options:
+    become: True
+  playbooks:
+    prepare: ../../../resources/prepare.yml
+    converge: ../../../resources/converge.yml
+  inventory:
+    group_vars:
+      freebsd:
+        ansible_python_interpreter: /usr/local/bin/python
+scenario:
+  name: vagrant
+verifier:
+  name: ansible

@@ -8,6 +8,7 @@
       register: cmd_check_python
       changed_when: false
       failed_when: cmd_check_python.rc not in [0, 1, 127]
+      when: ansible_facts.discovered_interpreter_python is not defined
       tags:
         - skip_ansible_lint # avoid lint error [E305] Use shell only when shell functionality is required
 
@@ -15,12 +16,17 @@
       raw: pkg update && pkg install -y python
       become: true
       changed_when: false
-      when: cmd_check_python.rc != 0
+      when: ansible_facts.discovered_interpreter_python is not defined and cmd_check_python.rc != 0
 
 - name: Prepare
   hosts: all
   gather_facts: true
   tasks:
+    - name: apt update (Debian)
+      apt:
+        update_cache: yes
+      when: ansible_os_family == 'Debian'
+
     - name: "Install bash, curl, jq"
       package:
         name:
@@ -28,9 +34,9 @@
           - curl
           - jq
         state: present
-      become: true
+      become: "{{ (ansible_system == 'FreeBSD') | ternary(True, False) }}"
 
-    - name: Install ca_root_nss
+    - name: Install ca_root_nss (FreeBSD)
       package:
         name: ca_root_nss
         state: present

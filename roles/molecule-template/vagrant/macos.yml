@@ -1,0 +1,9 @@
+---
+platforms:
+  - name: macos-instance
+    box: monsenso/macos-10.13
+    memory: 8192
+    cpus: 2
+    provider_raw_config_args:
+      - 'customize ["modifyvm", :id, "--usb", "off"]'
+      - 'customize ["modifyvm", :id, "--usbehci", "off"]'

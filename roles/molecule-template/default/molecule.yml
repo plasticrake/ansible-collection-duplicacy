@@ -9,10 +9,8 @@ platforms:
     pre_build_image: true
 provisioner:
   name: ansible
-  log: true
   playbooks:
-    prepare: ../resources/playbooks/prepare.yml
-    converge: ../roles/${ROLE_NAME}/playbooks/converge.yml
-    verify: ../roles/${ROLE_NAME}/playbooks/verify.yml
+    prepare: ../../../resources/prepare.yml
+    converge: ../../../resources/converge.yml
 verifier:
   name: ansible

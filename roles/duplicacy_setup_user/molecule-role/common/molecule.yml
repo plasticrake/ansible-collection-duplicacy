@@ -1,0 +1,5 @@
+---
+verifier:
+  name: testinfra
+  options:
+    sudo: true

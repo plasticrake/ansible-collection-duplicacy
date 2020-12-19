@@ -61,6 +61,7 @@ jobs:
           - macos
         role_name:
           - duplicacy_install
+          - duplicacy_setup_user
         exclude:
           - os: ubuntu-latest
             distro: freebsd
@@ -126,13 +127,13 @@ jobs:
         if: env.SCENARIO != 'vagrant'
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install "rich<9.5.0" "molecule[ansible,docker,lint]"
+          pip install "rich<9.5.0" "molecule[ansible,docker,lint]" pytest pytest-testinfra
 
       - name: Install test dependencies (vagrant)
         if: env.SCENARIO == 'vagrant'
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install "rich<9.5.0" "molecule[ansible,lint]" molecule-vagrant python-vagrant
+          pip install "rich<9.5.0" "molecule[ansible,lint]" pytest pytest-testinfra molecule-vagrant python-vagrant
 
       - name: Run Molecule version
         run: molecule --version

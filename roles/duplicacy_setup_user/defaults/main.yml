@@ -1,0 +1,7 @@
+---
+duplicacy_setup_user: "{{ duplicacy_user | default('duplicacy') }}"
+duplicacy_setup_user_is_system: "{{ duplicacy_user_is_system | default(false) }}"
+duplicacy_setup_group: "{{ duplicacy_group | default('duplicacy') }}"
+duplicacy_setup_group_is_system: "{{ duplicacy_group_is_system | default(false) }}"
+duplicacy_setup_groups: "{{ duplicacy_groups | default([duplicacy_setup_group]) }}"
+duplicacy_setup_user_type: "repository"

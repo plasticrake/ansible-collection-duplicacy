@@ -1,0 +1,72 @@
+---
+- name: duplicacy_setup_user variables
+  debug:
+    msg: |
+      duplicacy_setup_user
+      duplicacy_setup_user_type: {{ duplicacy_setup_user_type }}
+      duplicacy_setup_user: {{ duplicacy_setup_user }}
+      duplicacy_setup_group: {{ duplicacy_setup_group }}
+      duplicacy_setup_groups: {{ duplicacy_setup_groups }}
+      duplicacy_setup_user_is_system: {{ duplicacy_setup_user_is_system }}
+      duplicacy_setup_group_is_system: {{ duplicacy_setup_group_is_system }}
+
+- name: Include OS-specific variables
+  include_vars: "{{ lookup('first_found', params) }}"
+  vars:
+    params:
+      files:
+        - "os_{{ ansible_os_family }}.yml"
+        - default.yml
+      paths:
+        - "vars"
+
+- name: Define ssh-client
+  set_fact:
+    ssh_client_package: "{{ __ssh_client_package }}"
+  when: ssh_client_package is not defined
+
+- name: Ensure ssh-client package is present (for ssh-keygen) (Linux)
+  package:
+    name: "{{ ssh_client_package }}"
+    state: present
+  become: true
+  when: ansible_system == 'Linux' and ssh_client_package | default('', true) | length > 0
+
+- name: Ensure duplicacy group exists
+  group:
+    name: "{{ duplicacy_setup_group }}"
+    state: present
+    system: "{{ duplicacy_setup_group_is_system }}"
+  become: true
+
+- name: Ensure duplicacy user exists
+  user:
+    name: "{{ duplicacy_setup_user }}"
+    state: present
+    system: "{{ duplicacy_setup_user_is_system }}"
+    group: "{{ duplicacy_setup_group }}"
+    groups: "{{ duplicacy_setup_groups }}"
+    append: true
+    generate_ssh_key: true
+  become: true
+  register: result
+
+- name: Output duplicacy user
+  debug:
+    msg: "Duplicacy {{ duplicacy_setup_user_type }} user: {{ result.name }} group: {{ result.group }} home: {{ result.home }}"
+
+- name: Set duplicacy repository user facts
+  set_fact:
+    duplicacy_user: "{{ result.name }}"
+    duplicacy_group: "{{ duplicacy_setup_group }}"
+    duplicacy_user_home: "{{ result.home }}"
+    duplicacy_user_ssh_public_key: "{{ result.ssh_public_key }}"
+  when: duplicacy_setup_user_type != 'storage'
+
+- name: Set duplicacy storage user facts
+  set_fact:
+    duplicacy_storage_user: "{{ result.name }}"
+    duplicacy_storage_group: "{{ duplicacy_setup_group }}"
+    duplicacy_storage_user_home: "{{ result.home }}"
+    duplicacy_storage_user_ssh_public_key: "{{ result.ssh_public_key }}"
+  when: duplicacy_setup_user_type == 'storage'

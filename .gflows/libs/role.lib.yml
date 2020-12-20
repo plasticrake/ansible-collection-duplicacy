@@ -1,10 +1,54 @@
-name: CI
+#@ load("@ytt:template", "template")
 
-on:
+#@ load("@ytt:data", "data")
+
+#@ working_directory = "ansible_collections/plasticrake/duplicacy"
+
+#@ def setup_python():
+name: Set up Python 3
+uses: actions/setup-python@v2
+with:
+  python-version: "3.x"
+#@ end
+---
+#@ def checkout_collection():
+name: Checkout into collections structure
+uses: actions/checkout@v2
+with:
+  path: #@ working_directory
+#@ end
+---
+#@ def pip_cache():
+- name: Get pip cache dir
+  id: pip-cache
+  run: |
+    echo "::set-output name=dir::$(pip3 cache dir)"
+
+- name: pip cache
+  uses: actions/cache@v2
+  with:
+    path: ${{ steps.pip-cache.outputs.dir }}
+    key: ${{ runner.os }}-pip
+#@ end
+---
+#@ def paths(role_name):
+-  #@ "roles/{}/**".format(role_name)
+-  #@ ".github/workflows/ci-role-{}.yml".format(role_name)
+#@ end
+---
+#@ def role_ci(role_name):
+
+#@ role_directory = working_directory + "/roles/" + role_name
+
+name: #@ "CI Role: {}".format(role_name)
+
+"on":
   pull_request:
+    paths: #@ paths(role_name)
   push:
     branches:
-      - master
+      -  #@ data.values.git.main_branch
+    paths: #@ paths(role_name)
 
 jobs:
   lint:
@@ -12,36 +56,22 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ansible_collections/plasticrake/duplicacy
+        working-directory: #@ working_directory
     steps:
-      - name: Checkout into collections structure
-        uses: actions/checkout@v2
-        with:
-          path: ansible_collections/plasticrake/duplicacy
+      -  #@ checkout_collection()
 
-      - name: Set up Python 3
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.x"
+      -  #@ setup_python()
 
-      - name: Get pip cache dir
-        id: pip-cache
-        run: |
-          echo "::set-output name=dir::$(pip3 cache dir)"
-
-      - name: pip cache
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.pip-cache.outputs.dir }}
-          key: ${{ runner.os }}-pip
+      -  #@ template.replace(pip_cache())
 
       - name: Install test dependencies
         run: pip install yamllint ansible-lint
 
       - name: Lint code
+        #@yaml/text-templated-strings
         run: |
-          yamllint .
-          ansible-lint
+          yamllint roles/(@= role_name @)
+          ansible-lint roles/(@= role_name @)
 
   molecule:
     name: Molecule
@@ -59,9 +89,6 @@ jobs:
           - geerlingguy/docker-ubuntu2004-ansible:latest
           - freebsd
           - macos
-        role_name:
-          - duplicacy_install
-          - duplicacy_setup_user
         exclude:
           - os: ubuntu-latest
             distro: freebsd
@@ -82,30 +109,15 @@ jobs:
 
     defaults:
       run:
-        working-directory: ansible_collections/plasticrake/duplicacy
+        working-directory: #@ working_directory
     steps:
-      - name: Checkout into collections structure
-        uses: actions/checkout@v2
-        with:
-          path: ansible_collections/plasticrake/duplicacy
+      -  #@ checkout_collection()
 
-      - name: Set up Python 3
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.x"
+      -  #@ setup_python()
 
-      - name: Get pip cache dir
-        id: pip-cache
-        run: |
-          echo "::set-output name=dir::$(pip3 cache dir)"
+      -  #@ template.replace(pip_cache())
 
-      - name: pip cache
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.pip-cache.outputs.dir }}
-          key: ${{ runner.os }}-pip
-
-      - name: pip cache
+      - name: vagrant cache
         uses: actions/cache@v2
         with:
           path: "~/.vagrant.d/boxes"
@@ -135,9 +147,6 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install "rich<9.5.0" "molecule[ansible,lint]" pytest pytest-testinfra molecule-vagrant python-vagrant
 
-      - name: Run Molecule version
-        run: molecule --version
-
       - name: Install yq (ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: sudo snap install yq
@@ -147,16 +156,16 @@ jobs:
         run: brew install yq
 
       - name: Generate Molecule role tests
-        run: ./test_role.sh $ROLE_NAME $MOLECULE_DISTRO
+        run: #@ "./test_role.sh {} $MOLECULE_DISTRO".format(role_name)
         env:
           MOLECULE_DISTRO: ${{ matrix.distro }}
-          ROLE_NAME: ${{ matrix.role_name }}
 
       - name: Run Molecule tests
         run: molecule --debug test --scenario-name $SCENARIO
-        working-directory: ansible_collections/plasticrake/duplicacy/roles/${{ matrix.role_name }}
+        working-directory: #@ role_directory
         env:
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"
           MOLECULE_DISTRO: ${{ matrix.distro }}
-          ROLE_NAME: ${{ matrix.role_name }}
+          ROLE_NAME: #@ role_name
+#@ end
